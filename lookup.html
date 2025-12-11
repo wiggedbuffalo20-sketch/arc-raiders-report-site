@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ARC Raiders — Player Lookup</title>
+
+    <style>
+        body {
+            background: #0c0f16;
+            color: #ffffff;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            text-align: center;
+        }
+        header {
+            background: #121520;
+            padding: 20px;
+            font-size: 26px;
+            font-weight: bold;
+            border-bottom: 2px solid #242836;
+            color: white;
+        }
+        .container {
+            max-width: 900px;
+            margin: auto;
+            padding: 20px;
+        }
+        input {
+            width: 70%;
+            padding: 12px;
+            font-size: 18px;
+            border-radius: 8px;
+            border: 1px solid #2c2f38;
+            margin-right: 8px;
+            background: #1b1e25;
+            color: white;
+        }
+        button {
+            padding: 12px 20px;
+            font-size: 18px;
+            background: #2f6bfd;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #5684ff;
+        }
+        .result {
+            text-align: left;
+            background: #14161d;
+            border: 1px solid #2c2f38;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    ARC Raiders — Player Lookup
+</header>
+
+<div class="container">
+
+    <h2>Search by Embark ID</h2>
+    <input id="searchInput" type="text" placeholder="Enter Embark ID..." />
+    <button onclick="searchPlayer()">Search</button>
+
+    <div id="results"></div>
+
+</div>
+
+<script>
+    const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQrAWVc-rVh0aFmzokCKoy7jPUHjkMuSb-mstf1M4JepTcAt2Q4tFJ5vKfhwX_YuacxzigwaYrhT9Ku/pub?output=csv";
+
+    let reportsData = [];
+
+    // Load the CSV sheet and parse it
+    async function loadCSV() {
+        const response = await fetch(CSV_URL);
+        const text = await response.text();
+        const lines = text.split("\n");
+        const headers = lines[0].split(",");
+
+        reportsData = lines.slice(1).map(line => {
+            const values = line.split(",");
+            let obj = {};
+            headers.forEach((h, i) => {
+                obj[h.trim()] = values[i] ? values[i].trim() : "";
+            });
+            return obj;
+        });
+    }
+
+    // Search function
+    function searchPlayer() {
+        const query = document.getElementById("searchInput").value.trim().toLowerCase();
+        const resultsDiv = document.getElementById("results");
+        resultsDiv.innerHTML = "";
+
+        if (!query) {
+            resultsDiv.innerHTML = "<p>Please enter an Embark ID.</p>";
+            return;
+        }
+
+        const matches = reportsData.filter(r => r['Reported Player’s Embark ID']?.toLowerCase().includes(query));
+
+        if (matches.length === 0) {
+            resultsDiv.innerHTML = `<p>No reports found for <strong>${query}</strong>.</p>`;
+            return;
+        }
+
+        matches.forEach(rep => {
+            const card = document.createElement("div");
+            card.className = "result";
+            card.innerHTML = `
+                <p><strong>Reported Player:</strong> ${rep['Reported Player’s Embark ID'] || "N/A"}</p>
+                <p><strong>Reporter:</strong> ${rep['Your Embark ID'] || "Anonymous"}</p>
+                <p><strong>Violation:</strong> ${rep['Type of Violation'] || "Unknown"}</p>
+                <p><strong>Description:</strong> ${rep['Describe What Happened'] || "No description"}</p>
+                <p><strong>Bounty:</strong> ${rep['Bounty Amount'] || "None"}</p>
+                <p><strong>Date:</strong> ${rep['Date of Incident'] || "Unknown"}</p>
+            `;
+            resultsDiv.appendChild(card);
+        });
+    }
+
+    // initialize
+    loadCSV();
+</script>
+
+</body>
+</html>
